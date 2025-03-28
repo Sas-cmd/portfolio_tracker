@@ -1,0 +1,16 @@
+[
+  {
+    "Stock": "Vanguard Australian Government Bond Index ETF",
+    "Ticker": "VGB.AX",
+    "Shares": 8.0,
+    "Price Paid": 46.4,
+    "Date": "2025-02-12"
+  },
+  {
+    "Stock": "Vanguard Australian Shares Index ETF",
+    "Ticker": "VAS.AX",
+    "Shares": 2.0,
+    "Price Paid": 99.49,
+    "Date": "2024-08-23"
+  }
+]
