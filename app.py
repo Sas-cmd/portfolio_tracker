@@ -6,6 +6,12 @@ from pathlib import Path
 import yfinance as yf
 import matplotlib.pyplot as plt
 
+
+#.\.venv\Scripts\activate#
+
+#streamlit run app.py
+
+
 # Store transactions
 DATA_FILE = Path("data/transactions.json")
 
