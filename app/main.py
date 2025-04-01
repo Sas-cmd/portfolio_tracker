@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import date
+from datetime import date, datetime
+import yfinance as yf
 
-# Import our custom modules
 from data_manager import load_transactions, save_transactions
 from portfolio_metrics import calculate_performance
 from plots import plot_allocation, plot_profit_loss
@@ -12,13 +12,11 @@ from plots import plot_allocation, plot_profit_loss
 st.set_page_config(page_title="Portfolio Tracker", layout="wide")
 st.title("📈 Portfolio Tracker")
 
-# Load existing transactions
 transactions = load_transactions()
 
-# Portfolio Summary
+# ------------------------- Portfolio Summary -------------------------
 if transactions:
     st.markdown("### 📊 Portfolio Summary")
-
     perf_df = calculate_performance(transactions)
 
     if not perf_df.empty:
@@ -40,7 +38,7 @@ if transactions:
 else:
     st.info("Add transactions to see your portfolio performance.")
 
-# Portfolio Plots
+# ------------------------- Portfolio Plots -------------------------
 if transactions:
     st.markdown("---")
     st.markdown("### 📊 Visual Portfolio Breakdown")
@@ -52,20 +50,21 @@ if transactions:
         st.markdown("#### 📉 Profit / Loss by Ticker")
         plot_profit_loss(perf_df)
 
-# Transaction Management
+# ------------------------- Tabs -------------------------
 st.markdown("---")
 st.subheader("📦 Transaction Management")
 tabs = st.tabs([
     "➕ Add Transaction",
     "📋 View Transactions",
     "🗑️ Delete Transactions",
-    "📁 Import / Export"
+    "📁 Import / Export",
+    "📊 Market Trends"
 ])
 
-# Tab 1: Add Transaction
+# ------------------------- Tab 1: Add -------------------------
 with tabs[0]:
     with st.form("add_transaction_form"):
-        stock = st.text_input("Stock Name", placeholder="")
+        stock = st.text_input("Stock Name")
         ticker = st.text_input("Ticker Symbol", placeholder="e.g. VTS or IVV")
         shares = st.number_input("Number of Shares", min_value=0.01, step=0.01, format="%.2f")
         price = st.number_input("Price Paid per Share ($)", min_value=0.01, step=0.01, format="%.2f")
@@ -85,7 +84,7 @@ with tabs[0]:
         st.success("Transaction added!")
         st.experimental_rerun()
 
-# Tab 2: View Transactions
+# ------------------------- Tab 2: View -------------------------
 with tabs[1]:
     if transactions:
         df = pd.DataFrame(transactions)
@@ -95,7 +94,7 @@ with tabs[1]:
     else:
         st.info("No transactions yet. Add your first one above.")
 
-# Tab 3: Delete Transactions
+# ------------------------- Tab 3: Delete -------------------------
 with tabs[2]:
     if transactions:
         for i, txn in enumerate(transactions):
@@ -112,14 +111,10 @@ with tabs[2]:
     else:
         st.info("No transactions available to delete.")
 
-# Tab 4: Import / Export
+# ------------------------- Tab 4: Import/Export -------------------------
 with tabs[3]:
     st.markdown("### 📥 Import Transactions")
-    uploaded_file = st.file_uploader(
-        "Upload CSV or JSON File",
-        type=["csv", "json"],
-        key="import_file_uploader"
-    )
+    uploaded_file = st.file_uploader("Upload CSV or JSON File", type=["csv", "json"], key="import_uploader")
 
     if uploaded_file:
         try:
@@ -144,32 +139,90 @@ with tabs[3]:
     st.markdown("---")
     st.markdown("### 📤 Export Transactions")
 
-    export_format = st.selectbox(
-        "Select Export Format",
-        ["CSV", "JSON"],
-        key="export_format_selectbox"
-    )
-
-    if st.button("Export"):
+    export_format = st.selectbox("Select Export Format", ["CSV", "JSON"], key="export_format_selectbox")
+    if st.button("Export", key="export_button"):
         if transactions:
             df_export = pd.DataFrame(transactions)
-
             if export_format == "CSV":
                 csv_data = df_export.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    label="📥 Download CSV",
-                    data=csv_data,
-                    file_name="portfolio_transactions.csv",
-                    mime="text/csv"
-                )
-
-            elif export_format == "JSON":
+                st.download_button("📥 Download CSV", data=csv_data, file_name="portfolio_transactions.csv", mime="text/csv")
+            else:
                 json_data = df_export.to_json(orient="records", indent=2).encode("utf-8")
-                st.download_button(
-                    label="📥 Download JSON",
-                    data=json_data,
-                    file_name="portfolio_transactions.json",
-                    mime="application/json"
-                )
+                st.download_button("📥 Download JSON", data=json_data, file_name="portfolio_transactions.json", mime="application/json")
         else:
             st.warning("No transactions available to export.")
+
+# ------------------------- Tab 5: Market Trends -------------------------
+with tabs[4]:
+    st.markdown("### 📊 Market Trends")
+
+    if not transactions:
+        st.info("No transactions found. Add some before viewing Market Trends.")
+    else:
+        ticker_list = sorted(set(txn["Ticker"] for txn in transactions))
+        selected_ticker = st.selectbox("Select a Ticker", options=ticker_list)
+
+        timeframes = {
+            "1 Day": "1d",
+            "1 Week": "7d",
+            "1 Month": "1mo",
+            "1 Year": "1y",
+            "5 Years": "5y",
+            "Max": "max",
+            "YTD": "ytd"
+        }
+
+        selected_timeframe_label = st.selectbox(
+            "Select Timeframe",
+            options=list(timeframes.keys()),
+            index=3
+        )
+
+        ticker_data = yf.Ticker(selected_ticker)
+
+        if selected_timeframe_label == "YTD":
+            start_of_year = pd.Timestamp(datetime(date.today().year, 1, 1))
+            end_of_day = pd.Timestamp(date.today())
+            hist = ticker_data.history(start=start_of_year, end=end_of_day)
+        else:
+            period = timeframes[selected_timeframe_label]
+            hist = ticker_data.history(period=period)
+
+        if hist.empty:
+            st.warning(f"No data returned for {selected_ticker} in timeframe: {selected_timeframe_label}")
+        else:
+            fig, ax = plt.subplots(figsize=(10, 4))
+            hist.reset_index(inplace=True)
+            ax.plot(hist["Date"], hist["Close"], label="Close Price", color="cyan")
+
+            txn_for_ticker = [tx for tx in transactions if tx["Ticker"] == selected_ticker]
+            if txn_for_ticker:
+                start_date = hist["Date"].min().tz_localize(None)
+                end_date = hist["Date"].max().tz_localize(None)
+
+                buy_dates = []
+                buy_prices = []
+
+                for tx in txn_for_ticker:
+                    tx_date = pd.to_datetime(tx["Date"])
+                    if start_date <= tx_date <= end_date:
+                        matching_rows = hist[hist["Date"] == tx_date]
+                        if not matching_rows.empty:
+                            buy_price = matching_rows["Close"].iloc[0]
+                            buy_dates.append(tx_date)
+                            buy_prices.append(buy_price)
+
+                ax.scatter(buy_dates, buy_prices, marker='^', color='green', s=100, label='Buy')
+
+            ax.set_title(f"{selected_ticker} - {selected_timeframe_label}", color="white")
+            ax.set_xlabel("Date", color="white")
+            ax.set_ylabel("Price ($)", color="white")
+            ax.tick_params(colors="white")
+            for spine in ["top", "right", "bottom", "left"]:
+                ax.spines[spine].set_color("white")
+            ax.legend()
+            fig.patch.set_alpha(0)
+            ax.set_facecolor('none')
+
+            st.pyplot(fig)
+
