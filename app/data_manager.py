@@ -6,7 +6,6 @@ from typing import List, Dict, Any
 DATA_FILE = Path("data/transactions.json")
 
 def load_transactions(file_path: Path = None) -> List[Dict[str, Any]]:
-    """Load transactions from a JSON file (defaults to data/transactions.json)."""
     if file_path is None:
         file_path = DATA_FILE
 
@@ -16,7 +15,6 @@ def load_transactions(file_path: Path = None) -> List[Dict[str, Any]]:
     return []
 
 def save_transactions(transactions: List[Dict[str, Any]], file_path: Path = None) -> None:
-    """Save transactions to a JSON file (defaults to data/transactions.json)."""
     if file_path is None:
         file_path = DATA_FILE
 
