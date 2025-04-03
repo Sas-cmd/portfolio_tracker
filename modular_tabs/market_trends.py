@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import yfinance as yf
 from datetime import datetime
 
@@ -38,39 +38,64 @@ def market_trends(transactions):
         return
 
     hist.reset_index(inplace=True)
-    hist["Date"] = pd.to_datetime(hist["Date"]).dt.tz_localize(None)  # 👈 make dates tz-naive
+    hist["Date"] = pd.to_datetime(hist["Date"]).dt.tz_localize(None)
 
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.plot(hist["Date"], hist["Close"], label="Close Price", color="cyan")
+    fig = go.Figure()
 
+    # Stock Price Line
+    fig.add_trace(go.Scatter(
+        x=hist["Date"],
+        y=hist["Close"],
+        mode="lines",
+        name="Price",
+        line=dict(color="#00FFFF", width=2),  # cyan-ish line
+        hovertemplate="Date: %{x|%Y-%m-%d}<br>Price: $%{y:.2f}<extra></extra>"
+    ))
+
+    # Buy Markers
     txn_for_ticker = [tx for tx in transactions if tx["Ticker"] == selected_ticker]
-    if txn_for_ticker:
-        start_date = hist["Date"].min()
-        end_date = hist["Date"].max()
+    buy_dates = []
+    buy_prices = []
 
-        buy_dates = []
-        buy_prices = []
+    start_date = hist["Date"].min()
+    end_date = hist["Date"].max()
 
-        for tx in txn_for_ticker:
-            tx_date = pd.to_datetime(tx["Date"])
-            tx_date = tx_date.tz_localize(None)  # 👈 make tx_date tz-naive
-            if start_date <= tx_date <= end_date:
-                matching_rows = hist[hist["Date"] == tx_date]
-                if not matching_rows.empty:
-                    buy_price = matching_rows["Close"].iloc[0]
-                    buy_dates.append(tx_date)
-                    buy_prices.append(buy_price)
+    for tx in txn_for_ticker:
+        tx_date = pd.to_datetime(tx["Date"])
+        if start_date <= tx_date <= end_date:
+            match = hist[hist["Date"] == tx_date]
+            if not match.empty:
+                buy_dates.append(tx_date)
+                buy_prices.append(match["Close"].iloc[0])
 
-        ax.scatter(buy_dates, buy_prices, marker='^', color='green', s=100, label='Buy')
+    if buy_dates:
+        fig.add_trace(go.Scatter(
+            x=buy_dates,
+            y=buy_prices,
+            mode="markers",
+            name="Buy",
+            marker=dict(
+                symbol="diamond",
+                color="lime",
+                size=12,
+                line=dict(width=1, color="white")
+            ),
+            hovertemplate="Buy Date: %{x|%Y-%m-%d}<br>Price: $%{y:.2f}<extra></extra>",
+        ))
 
-    ax.set_title(f"{selected_ticker} - {selected_timeframe_label}", color="white")
-    ax.set_xlabel("Date", color="white")
-    ax.set_ylabel("Price ($)", color="white")
-    ax.tick_params(colors="white")
-    for spine in ["top", "right", "bottom", "left"]:
-        ax.spines[spine].set_color("white")
-    ax.legend()
-    fig.patch.set_alpha(0)
-    ax.set_facecolor('none')
+    # Layout styling for dark mode
+    fig.update_layout(
+        title=f"{selected_ticker} - {selected_timeframe_label}",
+        xaxis_title="Date",
+        yaxis_title="Price ($)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="white"),
+        hovermode="x unified",
+        legend=dict(
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white")
+        )
+    )
 
-    st.pyplot(fig)
+    st.plotly_chart(fig, use_container_width=True)
