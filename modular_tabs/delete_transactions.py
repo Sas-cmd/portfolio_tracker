@@ -1,4 +1,8 @@
 import streamlit as st
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 from data_manager import save_transactions
 
 def delete_transactions(transactions):

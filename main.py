@@ -1,6 +1,8 @@
 import streamlit as st
+
+st.set_page_config(page_title="Portfolio Tracker", layout="wide")
+
 import pandas as pd
-import matplotlib.pyplot as plt
 from datetime import date
 import sys
 from pathlib import Path
@@ -13,15 +15,22 @@ from plots import plot_allocation, plot_profit_loss
 import sys
 from pathlib import Path
 
+# Import modular tabs
 from modular_tabs.add_transaction import add_transaction
 from modular_tabs.delete_transactions import delete_transactions
 from modular_tabs.import_export import import_export
 from modular_tabs.market_trends import market_trends
 from modular_tabs.view_transactions import view_transactions
+from modular_tabs.risk_analysis import risk_analysis
+from utils.ui_utils import customize_sidebar_with_logo
+
+customize_sidebar_with_logo()
 
 # Set page config
-st.set_page_config(page_title="Portfolio Tracker", layout="wide")
+
 st.title("📈 Portfolio Tracker")
+
+
 
 # Load existing transactions
 transactions = load_transactions()
@@ -63,30 +72,38 @@ if transactions:
 else:
     st.info("Add transactions to see your portfolio performance.")
 
+
 # -------------------------- Tabs -------------------------- #
 st.markdown("---")
 st.subheader("📦 Transaction Management")
 
-tabs = st.tabs([
-    "➕ Add Transaction",
-    "📋 View Transactions",
-    "🗑️ Delete Transactions",
-    "📁 Import / Export",
-    "📊 Market Trends"
-])
+with st.container():
+    tabs = st.tabs([
+        "➕ Add Transaction",
+        "📋 View Transactions",
+        "🗑️ Delete Transactions",
+        "📁 Import / Export",
+        "📊 Market Trends",
+        "⚠️ Risk Analysis"
+    ])
 
-# Tab functionality
-with tabs[0]:
-    add_transaction(transactions)
+    # Tab functionality
+    with tabs[0]:
+        add_transaction(transactions)
 
-with tabs[1]:
-    view_transactions(transactions)
+    with tabs[1]:
+        view_transactions(transactions)
 
-with tabs[2]:
-    delete_transactions(transactions)
+    with tabs[2]:
+        delete_transactions(transactions)
 
-with tabs[3]:
-    import_export(transactions)
+    with tabs[3]:
+        import_export(transactions)
 
-with tabs[4]:
-    market_trends(transactions)
+    with tabs[4]:
+        market_trends(transactions)
+
+    with tabs[5]:
+        risk_analysis(transactions)
+
+

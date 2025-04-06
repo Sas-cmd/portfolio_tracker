@@ -1,6 +1,10 @@
 import streamlit as st
 import pandas as pd
 import json
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 from data_manager import save_transactions
 
 def import_export(transactions):
