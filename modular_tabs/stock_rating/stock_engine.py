@@ -1,11 +1,12 @@
-import yfinance as yf
-
-
 import streamlit as st
+from modular_tabs.stock_rating.value_metrics import rate_stock
 
-def fundamental_score_ui():
-    st.markdown("## 📊 Fundamental Score UI")
-    st.info("This is the placeholder for fundamental score logic.")
+from modular_tabs.stock_rating.fundamentals import fundamental_score_ui
+
+from modular_tabs.stock_rating.quality_metrics import fetch_quality_metrics, score_quality_metrics
+
+fundamental_score_ui()
+
 
 # def fetch_fundamentals(ticker):
 #     #"""Fetch fundamental metrics from yfinance."""
