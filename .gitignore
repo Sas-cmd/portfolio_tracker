@@ -1,0 +1,34 @@
+# Ignore Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+env/
+ENV/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VSCode settings
+.vscode/
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Streamlit cache
+.streamlit/
+
+# macOS / Windows system files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Exported data
+*.csv
+*.json
+*.sqlite3
